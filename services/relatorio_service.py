@@ -164,6 +164,113 @@ class RelatorioService:
         doc.build(elements)
         return caminho_arquivo
 
+    def gerar_pdf_vendas(self, data_inicio=None, data_fim=None) -> str:
+        """
+        Exporta as vendas registradas em PDF.
+        Se não passar data_inicio/data_fim, exporta todas as vendas.
+        """
+        data_inicio_str = data_inicio or "todas"
+        data_fim_str = data_fim or ""
+        nome_arquivo = f"vendas_{data_inicio_str}{('_a_' + data_fim_str) if data_fim else ''}.pdf"
+        caminho_arquivo = os.path.join(self.pasta_saida, nome_arquivo)
+
+        conn = get_connection()
+        cursor = conn.cursor()
+        query = """
+            SELECT v.id, c.nome AS cliente, v.data_venda, v.forma_pagamento,
+                   v.bandeira_cartao, v.parcelas, v.desconto, v.valor_total
+            FROM vendas v
+            LEFT JOIN clientes c ON v.cliente_id = c.id
+        """
+        conditions = []
+        params = []
+        if data_inicio:
+            conditions.append("DATE(v.data_venda) >= ?")
+            params.append(data_inicio)
+        if data_fim:
+            conditions.append("DATE(v.data_venda) <= ?")
+            params.append(data_fim)
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        query += " ORDER BY v.data_venda DESC"
+
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        conn.close()
+
+        styles = getSampleStyleSheet()
+        titulo_style = ParagraphStyle(
+            'TituloStyle',
+            parent=styles['Heading1'],
+            fontSize=16,
+            textColor=colors.HexColor("#1A365D"),
+            spaceAfter=4
+        )
+        subtitulo_style = ParagraphStyle(
+            'SubTituloStyle',
+            parent=styles['Normal'],
+            fontSize=9,
+            textColor=colors.HexColor("#718096"),
+            spaceAfter=15
+        )
+        secao_style = ParagraphStyle(
+            'SecaoStyle',
+            parent=styles['Heading2'],
+            fontSize=12,
+            textColor=colors.HexColor("#2B6CB0"),
+            spaceBefore=12,
+            spaceAfter=6
+        )
+
+        doc = SimpleDocTemplate(
+            caminho_arquivo,
+            pagesize=letter,
+            rightMargin=30,
+            leftMargin=30,
+            topMargin=30,
+            bottomMargin=30
+        )
+
+        elements = []
+        elements.append(Paragraph("<b>Relatório de Vendas</b>", titulo_style))
+        if data_inicio or data_fim:
+            periodo = f"Período: {data_inicio or 'início'} até {data_fim or 'fim'}"
+            elements.append(Paragraph(periodo, subtitulo_style))
+        elements.append(Spacer(1, 10))
+
+        tabela_dados = [["ID", "Data/Hora", "Cliente", "Pagamento", "Desconto", "Total"]]
+        for row in rows:
+            forma_pagamento = row['forma_pagamento']
+            if forma_pagamento == "Cartão de Crédito":
+                bandeira = f" - {row['bandeira_cartao']}" if row['bandeira_cartao'] else ""
+                forma_pagamento = f"Crédito{bandeira} ({row['parcelas']}x)"
+            elif forma_pagamento == "Cartão de Débito":
+                bandeira = f" - {row['bandeira_cartao']}" if row['bandeira_cartao'] else ""
+                forma_pagamento = f"Débito{bandeira}"
+
+            tabela_dados.append([
+                str(row['id']),
+                row['data_venda'],
+                row['cliente'] or "Avulso",
+                forma_pagamento,
+                f"R$ {row['desconto']:.2f}",
+                f"R$ {row['valor_total']:.2f}"
+            ])
+
+        tabela = Table(tabela_dados, colWidths=[40, 110, 140, 170, 80, 80])
+        tabela.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#1A365D")),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('ALIGN', (2, 1), (2, -1), 'LEFT'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")),
+            ('PADDING', (0, 0), (-1, -1), 5),
+        ]))
+        elements.append(tabela)
+        doc.build(elements)
+        return caminho_arquivo
+
     # ==================== CONSULTA SQL ATUALIZADA ====================
 
     def _buscar_vendas_do_dia(self, data_hoje: str):

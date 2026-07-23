@@ -1,5 +1,7 @@
-﻿from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTableWidget, QTableWidgetItem, QGroupBox)
+﻿import os
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTableWidget, QTableWidgetItem, QGroupBox, QPushButton, QMessageBox)
 from repositories.venda_repository import VendaRepository
+from services.relatorio_service import RelatorioService
 
 try:
     from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -12,7 +14,20 @@ class TabGerenciadorVendas(QWidget):
     def __init__(self):
         super().__init__()
         self.venda_repo = VendaRepository()
+        self.relatorio_service = RelatorioService()
+        self.canvas = None
+        self.figure = None
+        self.ax = None
         self._init_ui()
+
+    def _criar_canvas_grafico(self):
+        if FigureCanvas is None or plt is None:
+            return
+
+        self.figure = plt.Figure(figsize=(5, 4))
+        self.ax = self.figure.add_subplot(111)
+        self.canvas = FigureCanvas(self.figure)
+        self.grafico_box_layout.addWidget(self.canvas)
 
     def _init_ui(self):
         layout = QHBoxLayout()
@@ -27,16 +42,19 @@ class TabGerenciadorVendas(QWidget):
 
         right_layout = QVBoxLayout()
         box_grafico = QGroupBox("📊 Top Baterias Mais Vendidas")
-        grafico_box_layout = QVBoxLayout()
+        self.grafico_box_layout = QVBoxLayout()
 
         if FigureCanvas is None or plt is None:
-            grafico_box_layout.addWidget(QLabel("Instale o pacote 'matplotlib' para habilitar o gráfico de vendas."))
+            self.grafico_box_layout.addWidget(QLabel("Instale o pacote 'matplotlib' para habilitar o gráfico de vendas."))
         else:
-            self.figure, self.ax = plt.subplots(figsize=(5, 4))
-            self.canvas = FigureCanvas(self.figure)
-            grafico_box_layout.addWidget(self.canvas)
+            self._criar_canvas_grafico()
 
-        box_grafico.setLayout(grafico_box_layout)
+        box_grafico.setLayout(self.grafico_box_layout)
+
+        self.btn_exportar_pdf = QPushButton("Exportar Vendas para PDF")
+        self.btn_exportar_pdf.setStyleSheet("background-color: #2B6CB0; color: white; padding: 8px; border-radius: 4px;")
+        self.btn_exportar_pdf.clicked.connect(self._exportar_vendas_para_pdf)
+        right_layout.addWidget(self.btn_exportar_pdf)
 
         right_layout.addWidget(box_grafico)
 
@@ -64,7 +82,7 @@ class TabGerenciadorVendas(QWidget):
             self.tabela_vendas.setItem(row, 5, QTableWidgetItem(f"R$ {v[5]:.2f}"))
 
     def _gerar_grafico_mais_vendidas(self):
-        if FigureCanvas is None or plt is None:
+        if FigureCanvas is None or plt is None or self.canvas is None or self.ax is None:
             return
 
         self.ax.clear()
@@ -85,3 +103,11 @@ class TabGerenciadorVendas(QWidget):
             self.figure.tight_layout()
 
         self.canvas.draw()
+
+    def _exportar_vendas_para_pdf(self):
+        try:
+            caminho_pdf = self.relatorio_service.gerar_pdf_vendas()
+            caminho_abs = os.path.abspath(caminho_pdf)
+            os.startfile(caminho_abs)
+        except Exception as e:
+            QMessageBox.critical(self, "Erro ao Exportar PDF", str(e))
