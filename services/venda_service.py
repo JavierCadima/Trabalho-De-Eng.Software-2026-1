@@ -31,16 +31,19 @@ class VendaService:
 
             total = max(0.0, subtotal - venda.desconto)
 
-            # 1. Registra a venda
+            # 1. Registra o cabeçalho da venda na transação
             venda_id = self.venda_repo.registrar_venda_transacao(conn, venda, subtotal, total)
 
-            # 2. Processa itens, baixa estoque e contabiliza sucata
+            # 2. Processa itens, realiza baixa no estoque e incrementa sucata
             for item in venda.itens:
                 self.venda_repo.registrar_item(conn, venda_id, item)
+                
+                # Chamada do seu produto_repo dentro da transação existente
                 self.produto_repo.dar_baixa_estoque(conn, item.produto_id, item.quantidade)
                 
                 if item.entregou_sucata:
-                    self.sucata_repo.incrementar_sucata(conn, item.quantidade, item.categoria)
+                    categoria = getattr(item, 'categoria', 'Carro')
+                    self.sucata_repo.incrementar_sucata(conn, item.quantidade, categoria)
 
             conn.commit()
             return {"sucesso": True, "venda_id": venda_id, "total": total}
