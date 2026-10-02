@@ -2,6 +2,8 @@
 Módulo de Criptografia - Cifra de César
 Implementa algoritmos de cifra por substituição monoalfabética (deslocamento)
 para ofuscação de dados confidenciais armazenados no banco de dados SQLite.
+
+teste 1wsbvwyh
 """
 
 CHAVE_CESAR = 3  # Deslocamento clássico da Cifra de César (A -> D, 0 -> 3)
