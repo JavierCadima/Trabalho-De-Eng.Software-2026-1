@@ -2,6 +2,13 @@ import random
 import time
 import math
 import re
+"""
+Módulo de Criptografia - Cifra de César
+Implementa algoritmos de cifra por substituição monoalfabética (deslocamento)
+para ofuscação de dados confidenciais armazenados no banco de dados SQLite.
+
+teste 1wsbvwyh
+"""
 
 class CriptografiaCustomizada:
     def __init__(self):
