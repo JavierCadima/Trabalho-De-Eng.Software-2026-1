@@ -1,6 +1,10 @@
 from repositories.troca_repository import TrocaRepository
+from models.sessao import SessaoSistema
 
 def relatorio_gerencial():
+    if not SessaoSistema.tem_permissao("relatorios_ver"):
+        print("\n[ACESSO NEGADO] Seu cargo não tem permissão para visualizar relatórios gerenciais.")
+        return
     print("\n--- RELATÓRIOS GERENCIAIS ---")
     res_vendas, defeitos = TrocaRepository.obter_dados_relatorio()
     

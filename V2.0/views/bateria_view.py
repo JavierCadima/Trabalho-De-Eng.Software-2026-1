@@ -1,4 +1,5 @@
 from models.bateria import Bateria
+from models.sessao import SessaoSistema
 from repositories.bateria_repository import BateriaRepository
 
 def selecionar_bateria_da_busca(termo):
@@ -27,6 +28,9 @@ def selecionar_bateria_da_busca(termo):
         return None
 
 def cadastrar_bateria():
+    if not SessaoSistema.tem_permissao("estoque_gerenciar"):
+        print("\n[ACESSO NEGADO] Seu cargo não tem permissão para cadastrar baterias.")
+        return
     print("\n--- CADASTRO DE NOVO MODELO DE BATERIA ---")
     try:
         marca = input("Marca (Ex: Moura, Heliar): ").strip()
@@ -53,6 +57,9 @@ def cadastrar_bateria():
         print("\n[ERRO] Entrada inválida! Verifique os valores numéricos digitados.")
 
 def repor_estoque():
+    if not SessaoSistema.tem_permissao("estoque_gerenciar"):
+        print("\n[ACESSO NEGADO] Seu cargo não tem permissão para repor estoque.")
+        return
     print("\n--- REPOSIÇÃO DE ESTOQUE (ADICIONAR UNIDADES) ---")
     termo = input("Digite o ID ou Nome/Marca/Modelo da bateria para reposição: ")
     bat = selecionar_bateria_da_busca(termo)
@@ -74,6 +81,9 @@ def repor_estoque():
         print("[ERRO] Quantidade inválida.")
 
 def listar_estoque():
+    if not SessaoSistema.tem_permissao("estoque_consultar"):
+        print("\n[ACESSO NEGADO] Seu cargo não tem permissão para consultar estoque.")
+        return
     print("\n--- CONSULTA DE ESTOQUE E PREÇOS ---")
     baterias = BateriaRepository.obter_todas()
     if not baterias:
@@ -88,6 +98,9 @@ def listar_estoque():
         print(f"{id_bat:<3} | {marca + ' ' + modelo:<18} | {ah}Ah/{cca}A:<10 | {aplicacao[:25]:<25} | {str(qtd) + alerta:<8} | R$ {p_venda:<6.2f} | R$ {p_min:<6.2f} | R$ {v_carcaca:<6.2f}")
 
 def atualizar_precificacao():
+    if not SessaoSistema.tem_permissao("estoque_gerenciar"):
+        print("\n[ACESSO NEGADO] Seu cargo não tem permissão para alterar preços.")
+        return
     listar_estoque()
     print("\n--- ATUALIZAÇÃO DE PRECIFICAÇÃO E PROMOÇÕES ---")
     termo = input("Informe o ID ou Nome da bateria que deseja alterar os preços: ")

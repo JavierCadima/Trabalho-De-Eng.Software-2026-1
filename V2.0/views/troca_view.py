@@ -1,10 +1,14 @@
 from datetime import datetime
 from models.troca import TrocaGarantia
+from models.sessao import SessaoSistema
 from repositories.bateria_repository import BateriaRepository
 from repositories.venda_repository import VendaRepository
 from repositories.troca_repository import TrocaRepository
 
 def processar_troca_garantia():
+    if not SessaoSistema.tem_permissao("garantia_troca"):
+        print("\n[ACESSO NEGADO] Seu cargo não tem permissão para processar trocas em garantia.")
+        return
     print("\n--- TROCA DE BATERIA DEFEITUOSA (GARANTIA) ---")
     busca = input("Digite o CPF do Cliente ou Nº de Série da bateria com defeito: ").strip()
     vendas = VendaRepository.buscar_garantia(busca)
@@ -60,6 +64,9 @@ def processar_troca_garantia():
     print("="*50)
 
 def consultar_total_baterias_ruins():
+    if not (SessaoSistema.tem_permissao("garantia_consultar") or SessaoSistema.tem_permissao("estoque_consultar")):
+        print("\n[ACESSO NEGADO] Sem permissão para consultar quantidade de baterias ruins.")
+        return
     carcacas_troca, garantias_defeito = TrocaRepository.obter_totais_ruins()
     total_ruins = carcacas_troca + garantias_defeito
 

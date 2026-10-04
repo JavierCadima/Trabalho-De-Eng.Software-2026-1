@@ -12,21 +12,30 @@ class BateriaRepository:
                 SELECT id, marca, modelo, amperagem, cca, quantidade, preco_venda, preco_minimo, valor_carcaca, garantia_meses 
                 FROM baterias WHERE id = ?
             """, (int(termo),))
+            resultados = cursor.fetchall()
+            conn.close()
+            baterias_decifradas = []
+            for b in resultados:
+                b_dec = (b[0], decifrar_texto(b[1]), decifrar_texto(b[2]), b[3], b[4], b[5], b[6], b[7], b[8], b[9])
+                baterias_decifradas.append(b_dec)
+            return baterias_decifradas
         else:
-            termo_cifrado = cifrar_texto(termo)
             cursor.execute("""
                 SELECT id, marca, modelo, amperagem, cca, quantidade, preco_venda, preco_minimo, valor_carcaca, garantia_meses 
-                FROM baterias 
-                WHERE marca LIKE ? OR modelo LIKE ? OR (marca || ' ' || modelo) LIKE ?
-            """, (f"%{termo_cifrado}%", f"%{termo_cifrado}%", f"%{termo_cifrado}%"))
-        resultados = cursor.fetchall()
-        conn.close()
-
-        baterias_decifradas = []
-        for b in resultados:
-            b_dec = (b[0], decifrar_texto(b[1]), decifrar_texto(b[2]), b[3], b[4], b[5], b[6], b[7], b[8], b[9])
-            baterias_decifradas.append(b_dec)
-        return baterias_decifradas
+                FROM baterias
+            """)
+            todos = cursor.fetchall()
+            conn.close()
+            termo_lower = termo.lower()
+            baterias_decifradas = []
+            for b in todos:
+                marca_dec = decifrar_texto(b[1])
+                modelo_dec = decifrar_texto(b[2])
+                nome_completo = f"{marca_dec} {modelo_dec}".lower()
+                if (termo_lower in marca_dec.lower()) or (termo_lower in modelo_dec.lower()) or (termo_lower in nome_completo):
+                    b_dec = (b[0], marca_dec, modelo_dec, b[3], b[4], b[5], b[6], b[7], b[8], b[9])
+                    baterias_decifradas.append(b_dec)
+            return baterias_decifradas
 
     @staticmethod
     def salvar(bateria):
