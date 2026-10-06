@@ -2,6 +2,14 @@
 
 Aplicação desktop para apoiar as operações de uma loja de baterias. O sistema oferece ponto de venda, controle de estoque, cadastro de clientes, consulta de vendas e gestão de garantias, com acesso às funções definido pelas permissões do cargo.
 
+Feito para disciplina:
+Introdução a Engenharia de Software: 
+Ministrada pela: Universidade do Estado do Rio de Janeiro e pelo professor 
+Dener Santos
+Realizado pelos alunos:
+- Javier Blanco Rodrigues Cadima Matrícula 202410330911
+- Antonio Walace Marins Vigant Matrícula 202310053311
+
 ## Funcionalidades
 
 - Realização e consulta de vendas.
